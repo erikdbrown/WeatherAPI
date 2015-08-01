@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    <style>
+    #cities li  {
+      display: inline-block;
+      padding: 10px;
+    }
+
+    #fetch {
+      display: none;
+    }
+    </style>
+  </head>
+  <body>
+    <div><ul id="cities" style='display:inline-block'></ul>
+      <input id='city_name'type="text" name="city_name" value="Enter city name" />
+      <input id='add_city' type="button" name="enter_city" value="Add City" />
+    </div>
+    <div id="container"></div>
+    <script src="https://code.jquery.com/jquery-2.1.1.js" charset="utf-8"></script>
+    <script>
+
+    var cities = [{'citycode': 'SF', city: 'San Francisco', api: 'http://api.openweathermap.org/data/2.5/weather?q=San%20Francisco&mode=json&units=imperial'},{'citycode': 'NYC', city: "New York", api: 'http://api.openweathermap.org/data/2.5/weather?q=New%20York%20City&mode=json&units=imperial'},{'citycode': 'London', city: "London", api: 'http://api.openweathermap.org/data/2.5/weather?q=London&mode=json&units=imperial'}];
+
+    var loadCities = function(event) {
+      cities.forEach ( function(item) {
+        $('#cities').append('<li id="' + item.citycode + '">' + item.city);
+      });
+    };
+
+    var addCity = function(citycode, cityname, apiURL) {
+      cities.push({
+        'citycode': citycode,
+        'city': cityname,
+        'api': apiURL
+      });
+    };
+
+    addCity('LA', 'Los Angeles', 'http://api.openweathermap.org/data/2.5/weather?q=Los%20Angeles&mode=json&units=imperial');
+    loadCities();
+
+    $('#add_city').on('click', function(event) {
+      event.preventDefault();
+      var citycode = $('#city_name').val().replace(/\s+/g, '').slice(0,9);
+      var cityname = $('#city_name').val();
+      var apiURL = 'http://api.openweathermap.org/data/2.5/weather?q=' + encodeURI(cityname) + '&mode=json&units=imperial'
+      addCity(citycode, cityname, apiURL),
+      $('#cities').append('<li id="' + citycode + '">' + cityname);
+      $('#city_name').val('Enter city name');
+    });
+
+    var cityStats = function(response) {
+      var sunrise = new Date(response.sys.sunrise * 1000);
+      var sunset = new Date(response.sys.sunset * 1000);
+      $('#container').append($('<div>').html('<h4>Current Temp: </h4>' + (Math.floor(response.main.temp) + ' &deg;F')));
+      $('#container').append($('<div>').html('<h4>Today\'s High Temp: </h4>' + (Math.floor(response.main.temp_max) + ' &deg;F')));
+      $('#container').append($('<div>').html('<h4>Today\'s Low Temp: </h4>' + (Math.floor(response.main.temp_min) + ' &deg;F')));
+      $('#container').append($('<div>').html('<h4>Weather Description: </h4>' + (response.weather[0]['description'])));
+      $('#container').append($('<div>').html('<h4>Current Wind Speed: </h4>' + (response.wind.speed)));
+      $('#container').append($('<div>').html('<h4>Sunrise time: </h4>' + (sunrise)));
+      $('#container').append($('<div>').html('<h4>Sunrise time: </h4>' + (sunset)));
+      $('#fetch').hide();
+    };
+
+    $('#cities li').on('click', function(event) {
+      event.preventDefault();
+      $('#container').empty();
+      $('#container').append($('<div id=fetch>').html('<h2>Fetching data...</h2>'));
+      $('#fetch').show();
+      var clickID = this.id;
+
+      cities.forEach ( function(item) {
+        if (item['citycode'] == clickID){
+          $.get(item.api).success(cityStats);
+        }
+      });
+    });
+
+    </script>
+  </body>
+</html>
