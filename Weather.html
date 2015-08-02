@@ -4,6 +4,29 @@
     <meta charset="utf-8">
     <title></title>
     <style>
+    * {
+      margin: 0;
+      font-family: Helvetica;
+    }
+
+    #header {
+      height: 150px;
+      background-color: #666699;
+      width: 100%;
+      padding-left: 10px;
+    }
+
+    #header img {
+      height: 130px;
+      margin: 10px;
+    }
+
+    #cities {
+      background-color: #B2B2CC;
+      color: #464662;
+      width: 100%;
+    }
+
     #cities li  {
       display: inline-block;
       padding: 10px;
@@ -12,18 +35,41 @@
     #fetch {
       display: none;
     }
+
+    #container {
+      width: 480px;
+      margin: auto;
+      font-size: 1.5em;
+      padding-top: 30px;
+      color: #464662;
+      line-height: 1.5em;
+    }
+
+    #background {
+      opacity: 0.55;
+      top: 188px;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      position: absolute;
+      z-index: -1;
+      background-repeat: no-repeat;
+      background-size: 100%;
+    }
     </style>
   </head>
   <body>
+    <div id="header"><img src="http://megaicons.net/static/img/icons_sizes/8/178/512/weather-partly-cloudy-day-icon.png"/></div>
     <div><ul id="cities" style='display:inline-block'></ul>
-      <input id='city_name'type="text" name="city_name" value="Enter city name" />
+      <input id='city_name' style='margin-left: 50px' type="text" name="city_name" value="Enter city name" />
       <input id='add_city' type="button" name="enter_city" value="Add City" />
     </div>
     <div id="container"></div>
+    <div id="background"></div>
     <script src="https://code.jquery.com/jquery-2.1.1.js" charset="utf-8"></script>
     <script>
 
-    var cities = [{'citycode': 'SF', city: 'San Francisco', api: 'http://api.openweathermap.org/data/2.5/weather?q=San%20Francisco&mode=json&units=imperial'},{'citycode': 'NYC', city: "New York", api: 'http://api.openweathermap.org/data/2.5/weather?q=New%20York%20City&mode=json&units=imperial'},{'citycode': 'London', city: "London", api: 'http://api.openweathermap.org/data/2.5/weather?q=London&mode=json&units=imperial'}];
+    var cities = [{'citycode': 'SF', city: 'San Francisco', api: 'http://api.openweathermap.org/data/2.5/weather?q=San%20Francisco&mode=json&units=imperial', picture: 'http://www.bloguluotrava.ro/wp-content/uploads/2014/06/San-Francisco.jpg'},{'citycode': 'NYC', city: "New York", api: 'http://api.openweathermap.org/data/2.5/weather?q=New%20York%20City&mode=json&units=imperial', picture: 'http://www.themusehotel.com/design/images/930-481/nyc-skyline.jpg'},{'citycode': 'London', city: "London", api: 'http://api.openweathermap.org/data/2.5/weather?q=London&mode=json&units=imperial', picture: 'http://cdn.londonandpartners.com/visit/london-organisations/houses-of-parliament/63950-640x360-london-icons2-640.jpg'}];
 
     var loadCities = function(event) {
       cities.forEach ( function(item) {
@@ -32,15 +78,30 @@
     };
 
     var addCity = function(citycode, cityname, apiURL) {
-      cities.push({
-        'citycode': citycode,
-        'city': cityname,
-        'api': apiURL
-      });
-    };
+      var picture_url;
+      cityskyline = cityname + 'skyline';
+      console.log(encodeURI(cityskyline));
+      $.ajax({
+        url: "https://api.imgur.com/3/gallery/search?q="+ encodeURI(cityname),
+        headers: {'Authorization': "Client-ID e3776adbe9c5fb9"},
+        success: function(response) {
+          console.log(response);
+          data_item = Math.floor(Math.random() * response.data.length);
+          picture_url = response.data[data_item].link;
+        },
+        complete: function() {
+          cities.push({
+            'citycode': citycode,
+            'city': cityname,
+            'api': apiURL,
+            'picture': picture_url
+          });
+        }
+      })
+    }
 
-    addCity('LA', 'Los Angeles', 'http://api.openweathermap.org/data/2.5/weather?q=Los%20Angeles&mode=json&units=imperial');
     loadCities();
+
 
     $('#add_city').on('click', function(event) {
       event.preventDefault();
@@ -51,6 +112,8 @@
       $('#cities').append('<li id="' + citycode + '">' + cityname);
       $('#city_name').val('Enter city name');
     });
+
+
 
     var cityStats = function(response) {
       var sunrise = new Date(response.sys.sunrise * 1000);
@@ -65,18 +128,21 @@
       $('#fetch').hide();
     };
 
-    $('#cities li').on('click', function(event) {
+    $(document).on('click', '#cities li', function(event) {
       event.preventDefault();
       $('#container').empty();
       $('#container').append($('<div id=fetch>').html('<h2>Fetching data...</h2>'));
       $('#fetch').show();
       var clickID = this.id;
+      var background_image
 
       cities.forEach ( function(item) {
         if (item['citycode'] == clickID){
           $.get(item.api).success(cityStats);
+          background_image = item.picture;
         }
       });
+      $('#background').css('background-image', 'url(' + background_image + ')');
     });
 
     </script>
